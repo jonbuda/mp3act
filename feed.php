@@ -4,7 +4,7 @@
 
 include_once("includes/mp3act_functions.php"); 
 
-mp3act_connect();
+$dbh = mp3act_connect();
 
 header("Content-Type: text/xml");
 
@@ -17,7 +17,7 @@ WHERE mp3act_songs.album_id=mp3act_albums.album_id
 AND mp3act_artists.artist_id=mp3act_songs.artist_id 
 GROUP BY mp3act_songs.album_id ORDER BY mp3act_songs.date_entered DESC LIMIT 10";
 
-$result = mysql_query($query);
+$result = mysqli_query($dbh, $query);
 echo "<?xml version=\"1.0\" encoding=\"utf-8\" ?>";
 ?>
 
@@ -31,7 +31,7 @@ echo "<?xml version=\"1.0\" encoding=\"utf-8\" ?>";
 	<generator><?php echo "$GLOBALS[http_url]$GLOBALS[uri_path]/feed.php"; ?></generator>
 	<language>en</language>
 <?php
-while($row = @mysql_fetch_array($result)){ ?>
+while($row = @mysqli_fetch_array($result)){ ?>
 
 <item>
 <title><?php echo "$row[prefix] ".htmlentities($row['artist_name'])." - ".htmlentities($row['album_name']); ?></title>
