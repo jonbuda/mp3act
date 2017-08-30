@@ -7,3 +7,7 @@ mp3act Digital Music Server is a PHP and MySQL driven mp3 web-based jukebox for 
 # Installation
 
 TBD but look in /docs
+
+# Contributing
+
+Fork this repository and create a feature branch. Issue a pull request and we'll review!
