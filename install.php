@@ -3,8 +3,8 @@ include("includes/mp3act_functions.php");
 
 function installed(){
   $query = "SELECT user_id FROM mp3act_users";
-  $result = @mysql_query($query);
-	if(@mysql_num_rows($result) > 0){
+  $result = @mysqli_query($dbh, $query);
+	if(@mysqli_num_rows($result) > 0){
 		echo "<strong class='error'>It appears that you have already installed mp3act on this computer.</strong><br/><br/>";
 		echo "<a href=\"$GLOBALS[http_url]$GLOBALS[uri_path]/\">Login to your mp3act server</a><br/>";
     return TRUE;
@@ -151,7 +151,8 @@ p.pad{
 	<?php
 	switch($step){
 		case 1:
-			if(mp3act_connect()){
+			$dbh = mysql_connect();
+			if($dbh){
 				if(!installed()){
 				  echo "<strong>Welcome to the mp3act installation page</strong><br/><br/>";
 				  echo "This is a very simple and easy installation.  You'll be enjoying your music in no time at all. I swear.<br/><br/>";
@@ -171,7 +172,7 @@ p.pad{
 // Give instructions for setting permissions and external programs
 // mpg123, lame, Amazon API, php bin
 		case 2:
-		mp3act_connect();
+		$dbh = mp3act_connect();
 		if(!installed()){
 $querys['albums'] = "CREATE TABLE mp3act_albums (
   album_id int(11) NOT NULL auto_increment,
@@ -323,7 +324,7 @@ $querys['audioscrobbler'] = "CREATE TABLE IF NOT EXISTS mp3act_audioscrobbler (
   PRIMARY KEY  (as_id)
 ) TYPE=MyISAM";
 
-$querys['settings'] = "CREATE TABLE mp3act_settings (
+/*$querys['settings'] = "CREATE TABLE mp3act_settings (
   id int(3) NOT NULL auto_increment,
   version varchar(15) NOT NULL default '',
   invite_mode tinyint(4) NOT NULL default '0',
@@ -336,14 +337,34 @@ $querys['settings'] = "CREATE TABLE mp3act_settings (
   phpbin varchar(100) NOT NULL default '',
   PRIMARY KEY  (id)
 ) TYPE=MyISAM";
+*/
+$querys['settings'] = "CREATE TABLE mp3act_settings (
+  id int(3) NOT NULL auto_increment,
+  version varchar(15) NOT NULL default '',
+  invite_mode tinyint(4) NOT NULL default '0',
+  upload_path varchar(255) NOT NULL default '',
+  downloads tinyint(4) NOT NULL default '0',
+  sample_mode tinyint(2) NOT NULL default '0',
+  lamebin varchar(100) NOT NULL default '',
+  phpbin varchar(100) NOT NULL default '',
+  PRIMARY KEY  (id)
+) TYPE=MyISAM";
+$querys['album_data'] = "CREATE TABLE mp3act_album_data (
+  album_id int(11) unsigned NOT NULL,
+  art mediumblob,
+  art_mime varchar(64) character set utf8 default NULL,
+  thumb blob,
+  thumb_mime varchar(64) character set utf8 default NULL,
+  UNIQUE KEY album_id (album_id)
+) TYPE=MyISAM";
 
-$querys['settingsinfo'] = "INSERT INTO `mp3act_settings` VALUES (NULL,'1.2',0, '', '', 0,0,'','','')";
+$querys['settingsinfo'] = "INSERT INTO `mp3act_settings` VALUES (NULL,'1.4',0, '', '', 0,0,'','','')";
 
 echo "<strong>Creating mp3act Database Tables....</strong><br/><br/>";
 //  CREATE TABLES
 $error = 0;
 foreach($querys as $key=>$query){
-	if(mysql_query($query)){
+	if(mysqli_query($dbh, $query)){
 		
 	}
 	else{
@@ -367,8 +388,8 @@ if(!$error){
 			<strong>Invitation for Registration</strong><br/>(Users are required to be invited to register)<br/><select name='invite'><option value='0' >Not Required</option><option value='1'>Required</option></select><br/><br/>
     	<strong>Sample Mode</strong><br/>(play 1/4 of each song)<br/><select name='sample_mode'><option value='0'>Sample Mode OFF</option><option value='1' >Sample Mode ON</option></select><br/><br/>
     	<strong>Music Downloads</strong><br/>(Rules for Users Downloading Music)<br/><select name='downloads'><option value='0' >Not Allowed</option><option value='1' >Allowed for All</option><option value='2' >Allowed with Permission</option></select><br/><br/>
-    	<strong>Amazon API Key</strong><br/>(needed for downloading Album Art) <a href='http://www.amazon.com/webservices/' target='_new'>Obtain Key</a><br/><input type='text' size='30' name='amazonid' /><br/><br/>
-    	 <strong>Path to MP3 Player</strong><br/>(ex. /usr/bin/mpg123)<br/><input type='text' size='30' name='mp3bin'  /><br/><br/>
+<!--   	<strong>Amazon API Key</strong><br/>(needed for downloading Album Art) <a href='http://www.amazon.com/webservices/' target='_new'>Obtain Key</a><br/><input type='text' size='30' name='amazonid' /><br/><br/>
+  	 <strong>Path to MP3 Player</strong><br/>(ex. /usr/bin/mpg123)<br/><input type='text' size='30' name='mp3bin'  /><br/><br/> -->
     	 <strong>Path to Lame Encoder</strong><br/>(ex. /usr/bin/lame)<br/><input type='text' size='30' name='lamebin'  /><br/><br/>
     	<strong>Path to PHP-CLI Binary</strong><br/>(ex. /usr/bin/php)<br/><input type='text' size='30' name='phpbin'  /><br/><br/>
 			<input type='submit' value='save settings and continue &raquo;' class='btn' />
@@ -380,10 +401,12 @@ if(!$error){
 		  }
 		break;
 		case 4:
-			mp3act_connect();
+			$dbh = mp3act_connect();
 			if(!installed()){
-			  $query = "UPDATE mp3act_settings SET invite_mode=$_POST[invite],sample_mode=$_POST[sample_mode],downloads=$_POST[downloads],amazonid=\"$_POST[amazonid]\",mp3bin=\"$_POST[mp3bin]\",lamebin=\"$_POST[lamebin]\",phpbin=\"$_POST[phpbin]\" WHERE id=1";
-  			mysql_query($query);
+//			  $query = "UPDATE mp3act_settings SET invite_mode=$_POST[invite],sample_mode=$_POST[sample_mode],downloads=$_POST[downloads],amazonid=\"$_POST[amazonid]\",mp3bin=\"$_POST[mp3bin]\",lamebin=\"$_POST[lamebin]\",phpbin=\"$_POST[phpbin]\" WHERE id=1";
+			  $query = "UPDATE mp3act_settings SET invite_mode=$_POST[invite],sample_mode=$_POST[sample_mode],downloads=$_POST[downloads],lamebin=\"$_POST[lamebin]\",phpbin=\"$_POST[phpbin]\" WHERE id=1";
+
+  			mysqli_query($dbh, $query);
   			echo "<strong>Settings Saved....</strong><br/><br/>";
   			echo "<strong>Installation Successful!</strong><br/><br/>";
   			if(!ini_get('allow_url_fopen')){
@@ -396,7 +419,7 @@ if(!$error){
   			echo "<a href=\"$GLOBALS[http_url]$GLOBALS[uri_path]/\">Login to your new mp3act server</a><br/>";
   			$random_password = substr(md5(uniqid(microtime())), 0, 6);
   			$query = "INSERT INTO `mp3act_users` VALUES (NULL, 'admin', 'Admin', 'User', PASSWORD(\"$random_password\"), 10, NOW(), 1, '', 'streaming', 0, 's', '21232f297a57a5a743894a0e4a801fc3', '', '0000-00-00 00:00:00', 1,'','','',0)";
-  			mysql_query($query);
+  			mysqli_query($dbh, $query);
   			echo "<br/><strong>Username:</strong> Admin<br/><strong>Password:</strong> $random_password (Please change this password as soon as you login.)<br/><br/>";
 
   			echo "To add music to the database, choose the 'Admin' tab and click on 'Add Music to Database'";

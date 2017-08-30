@@ -11,14 +11,15 @@
 *  You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 *************************************************************************/
 
-include_once("includes/mp3act_functions.php"); 
+include_once("includes/mp3act_functions.php");
 include_once("includes/sessions.php");
 require("includes/Sajax.php");
 $sajax_remote_uri = 'index.php';
 $sajax_request_type = "POST";
+//$sajax_debug_mode = 1;
 sajax_init();
 // list of functions to export
-sajax_export("getCurrentSong","getUser","musicLookup","playlist_rem","playlist_add","playlistInfo","clearPlaylist","buildBreadcrumb","play","playlist_move","searchMusic","editUser","switchMode","viewPlaylist","getDropDown","savePlaylist","getRandItems","randPlay","resetDatabase","createInviteCode","editSettings","deletePlaylist","adminEditUsers","adminAddUser","submitScrobbler"); 
+sajax_export("getCurrentSong","getUser","musicLookup","playlist_rem","playlist_add","playlistInfo","clearPlaylist","buildBreadcrumb","play","playlist_move","searchMusic","editUser","switchMode","viewPlaylist","getDropDown","savePlaylist","getRandItems","randPlay","resetDatabase","createInviteCode","editSettings","deletePlaylist","adminEditUsers","adminAddUser","submitScrobbler","insert_art"); 
 sajax_handle_client_request(); // serve client instances
 
 if(!isLoggedIn()){
@@ -51,19 +52,23 @@ if(!isLoggedIn()){
 	<?php sajax_show_javascript(); ?></script>
 	<script type="text/javascript" src="includes/mp3act_js.js"></script>	
 	<script type="text/javascript" src="includes/fat.js"></script>
+	<script type="text/javascript" src="includes/swfplayer/swfobject.js"></script>
+	<script type="text/javascript" src="includes/swfplayer/swfplayerapi.js"></script>
 </head>
 <body>
 
 <div id="topinfo">
 	<div class="right">logged in as <?php echo "$_SESSION[sess_firstname] $_SESSION[sess_lastname]"; ?> [<a href="login.php?logout=1" title="Logout of mp[3]act">logout</a> | <a href="#" onclick="switchPage('prefs'); return false;" title="Set Your User Preferences">my account</a>]</div>
-	<strong>mp3act music system v<?php echo getSystemSetting("version"); ?></strong> <?php if(getSystemSetting("mp3bin") != ""){?>[<a href="#" onclick="switchMode('streaming'); return false;" title="Switch to Streaming Mode">stream</a> | <a href="#" onclick="switchMode('jukebox'); return false;" title="Switch to Jukebox Mode">jukebox</a>]<?php } ?>
+	<!--<strong>mp3act music system v<?php echo getSystemSetting("version"); ?></strong> <?php if(getSystemSetting("mp3bin") != ""){?>[<a href="#" onclick="switchMode('streaming'); return false;" title="Switch to Streaming Mode">stream</a> | <a href="#" onclick="switchMode('jukebox'); return false;" title="Switch to Jukebox Mode">jukebox</a>]<?php } ?> -->
+	<strong>mp3act music system v<?php echo getSystemSetting("version"); ?></strong> [<a href="#" onclick="switchMode('streaming'); return false;" title="Switch to Streaming Mode">stream</a> | <a href="#" onclick="switchMode('jukebox'); return false;" title="Switch to Jukebox Mode">jukebox</a>]
 </div>
 
 <div id="wrap">
 	<div id="header">
 		<div id="controls">
-			
+
 		</div>
+
 		<h1 id="pagetitle"></h1>
 		<ul id="nav">
 			<li><a href="#" id="search" onclick="switchPage('search'); return false;" title="Search the Music Database">Search</a></li>
@@ -100,6 +105,7 @@ if(!isLoggedIn()){
 	</div>
 	<div class="clear"></div>
 </div>
+<iframe id="jwplaylist" name="jwplaylist" src="playlist.php" height="400" width="800" frameborder="0"></iframe>
 <iframe src="hidden.php" frameborder="0" height="0" width="0" id="hidden" name="hidden"></iframe>
 </body>
 </html>

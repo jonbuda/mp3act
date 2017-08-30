@@ -13,15 +13,15 @@
      header("Location: index.php");
    }
    if(isset($_POST['username']) && $_POST['username'] != "" && isset($_POST['password']) && $_POST['password'] != ""){
-      mp3act_connect();
+      $dbh = mp3act_connect();
       
       $query = "SELECT * FROM mp3act_users 
       WHERE username='$_POST[username]' AND 
       password=PASSWORD('$_POST[password]') AND active=1 LIMIT 1";
       
-      $result = mysql_query($query);
-      if(mysql_num_rows($result) > 0){
-        $userinfo = mysql_fetch_array($result);
+      $result = mysqli_query($dbh, $query);
+      if(mysqli_num_rows($result) > 0){
+        $userinfo = mysqli_fetch_array($result);
       
         $_SESSION['sess_username'] = $userinfo['username'];
         $_SESSION['sess_firstname'] = $userinfo['firstname'];
@@ -29,9 +29,9 @@
         $_SESSION['sess_userid'] = $userinfo['user_id'];
 				$_SESSION['sess_accesslevel'] = $userinfo['accesslevel'];
         $_SESSION['sess_playmode'] = $userinfo['default_mode'];
-        if(getSystemSetting("mp3bin") == ""){
-					$_SESSION['sess_playmode'] = 'streaming';
-				}
+//        if(getSystemSetting("mp3bin") == ""){
+//					$_SESSION['sess_playmode'] = 'streaming';
+//				}
         $_SESSION['sess_stereo'] = $userinfo['default_stereo'];
         $_SESSION['sess_bitrate'] = $userinfo['default_bitrate'];
 				$_SESSION['sess_usermd5'] = $userinfo['md5'];
@@ -40,14 +40,14 @@
         $_SESSION['sess_logged_in'] = 1;
         
         $query = "UPDATE mp3act_users SET last_login=NOW(), last_ip=\"$_SERVER[REMOTE_ADDR]\" WHERE user_id=$userinfo[user_id]";
-        mysql_query($query);
+        mysqli_query($dbh, $query);
 				
 				if(isset($_POST['remember']) && ($_POST['remember'] == 1)){
 					$time = time();
 					$md5time = md5($time);
 					setcookie("mp3act_cookie",$md5time,time()+60*60*24*30);
 					$query = "INSERT INTO mp3act_logins VALUES (NULL,$userinfo[user_id],\"$time\",\"$md5time\")";
-					mysql_query($query);
+					mysqli_query($dbh, $query);
 				}
 				header("Location: index.php");
       }
