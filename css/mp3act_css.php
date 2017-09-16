@@ -3,7 +3,7 @@
 header("Content-Type: text/css");
 include_once("../includes/mp3act_functions.php");
 include_once("../includes/sessions.php");
-mp3act_connect();
+$dbh = mp3act_connect();
 /*****************************************
 *  Main Style Sheet for: mp3act music player
 *  Date Created: 3-12-2005
@@ -12,8 +12,8 @@ mp3act_connect();
 *****************************************/
 $theme_id = (isset($_SESSION['sess_theme_id']) ? $_SESSION['sess_theme_id'] : 1);
 $query = "SELECT * FROM mp3act_themes WHERE theme_id=$theme_id";
-$result = mysql_query($query);
-$row = mysql_fetch_array($result);
+$result = mysqli_query($dbh, $query);
+$row = mysqli_fetch_array($result);
 
 $dark = $row['color1'];
 $medium = $row['color2'];
@@ -438,7 +438,28 @@ ul#nav li a.c{
 	border-color: #555;
 	cursor: pointer;
 }
-
+<? //*********** ?>
+.box .table-art p a {
+	background: #244A79;
+	color: #fff;
+	padding: 2px;
+	text-decoration: none;
+	font: normal 9px sans-serif;
+}
+.box .table-art p a:hover {
+	background: #0E2F58;
+}
+.box .boxart img#bigartS {
+	display: none;
+	position: relative;
+	z-index: 30;
+	background: #f3f3f3;
+	padding: 3px;
+	border: 1px solid #666;
+	top:-20px;
+	right:-20px;
+}
+<? //*********** ?>
 .box .head{
 	padding: 4px;
 	background: #ccc;

@@ -6,11 +6,11 @@
 
 include("includes/mp3act_functions.php");
 
-mp3act_connect();
+$dbh = mp3act_connect();
 $errors = FALSE;
 
-$sql = "UPDATE mp3act_settings SET version='1.2' WHERE id=1";
-if(!mysql_query($sql)){
+$sql = "UPDATE mp3act_settings SET version='1.4' WHERE id=1";
+if(!mysqli_query($dbh, $sql)){
   $errors = TRUE;
 }
 $sql = "CREATE TABLE IF NOT EXISTS mp3act_audioscrobbler (
@@ -20,25 +20,25 @@ $sql = "CREATE TABLE IF NOT EXISTS mp3act_audioscrobbler (
   as_timestamp varchar(100) NOT NULL default '',
   PRIMARY KEY  (as_id)
 ) TYPE=MyISAM";
-if(!mysql_query($sql)){
+if(!mysqli_query($dbh, $sql)){
   $errors = TRUE;
 }
 
 $sql = "ALTER TABLE mp3act_users ADD as_username varchar(20) NOT NULL default ''";
-if(!mysql_query($sql)){
+if(!mysqli_query($dbh, $sql)){
   $errors = TRUE;
 }
 
 $sql = "ALTER TABLE mp3act_users ADD as_password varchar(30) NOT NULL default ''";
-if(!mysql_query($sql)){
+if(!mysqli_query($dbh, $sql)){
   $errors = TRUE;
 }
 $sql = "ALTER TABLE mp3act_users ADD as_lastresult varchar(255) NOT NULL default ''";
-if(!mysql_query($sql)){
+if(!mysqli_query($dbh, $sql)){
   $errors = TRUE;
 }
 $sql = "ALTER TABLE mp3act_users ADD as_type tinyint(4) NOT NULL default '0'";
-if(!mysql_query($sql)){
+if(!mysqli_query($dbh, $sql)){
   $errors = TRUE;
 }
 
