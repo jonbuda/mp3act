@@ -74,7 +74,7 @@ function sendPassword($email){
   	}else{
   		$row = mysql_fetch_array($result);
   		$random_password = substr(md5(uniqid(microtime())), 0, 6);
-  		$query = "UPDATE mp3act_users SET password=PASSWORD(\"$random_password\") WHERE user_id=$row[user_id]";
+  		$query = "UPDATE mp3act_users SET password=SHA1(\"$random_password\") WHERE user_id=$row[user_id]";
   		mysql_query($query);
   		$msg = "$email,\n\nYou have requested a new password for the mp3act server you are a member of. Your password has been reset to a new random password. When you login please change your password to a new one of your choice.\n\n";
 			$msg .= "Username: $row[username]\nPassword: $random_password\n\nLogin here: $GLOBALS[http_url]$GLOBALS[uri_path]/login.php";
@@ -808,7 +808,7 @@ function adminAddUser($firstname='',$lastname='',$username='',$email='',$level='
       return 0;
     $query = "INSERT INTO mp3act_users VALUES 
     							(NULL,\"".$username."\",\"".$firstname."\",\"".$lastname."\",
-    							PASSWORD(\"".$pass."\"),$level,NOW(),1,\"".$email."\",\"streaming\",0,\"s\",\"$md5\",\"\",\"\",1,\"\",\"\",\"\",0)";
+    							SHA1(\"".$pass."\"),$level,NOW(),1,\"".$email."\",\"streaming\",0,\"s\",\"$md5\",\"\",\"\",1,\"\",\"\",\"\",0)";
     if(mysql_query($query)){
       return 1;
     }
@@ -949,7 +949,7 @@ function editUser($type,$input1,$input2,$input3,$input4,$input5,$input6,$input7)
 	break;
 	case 'pass':
 			if(!empty($input1)){
-				$query = "UPDATE mp3act_users SET password=PASSWORD(\"$input2\") WHERE user_id=$_SESSION[sess_userid]";
+				$query = "UPDATE mp3act_users SET password=SHA1(\"$input2\") WHERE user_id=$_SESSION[sess_userid]";
 				mysql_query($query);
 				return 1;
 			}

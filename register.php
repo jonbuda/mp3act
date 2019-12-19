@@ -19,7 +19,7 @@ if(mysqli_num_rows($result)>0){
 		$md5 = md5($_POST['register']['new_username']);
 		$query = "INSERT INTO mp3act_users VALUES 
 							(NULL,\"".$_POST['register']['new_username']."\",\"".$_POST['register']['firstname']."\",\"".$_POST['register']['lastname']."\",
-							PASSWORD(\"".$_POST['register']['password']."\"),1,NOW(),1,\"".$_POST['register']['email']."\",\"streaming\",0,\"s\",\"$md5\",\"\",\"\",1,\"\",\"\",0)";
+							SHA1(\"".$_POST['register']['password']."\"),1,NOW(),1,\"".$_POST['register']['email']."\",\"streaming\",0,\"s\",\"$md5\",\"\",\"\",1,\"\",\"\",0)";
 		
 		if(mysqli_query($dbh, $query)){
 			if(!empty($_POST['invite_code'])){

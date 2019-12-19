@@ -17,10 +17,10 @@
       
       $query = "SELECT * FROM mp3act_users 
       WHERE username='$_POST[username]' AND 
-      password=PASSWORD('$_POST[password]') AND active=1 LIMIT 1";
+      password=SHA1('$_POST[password]') AND active=1 LIMIT 1";
       
       $result = mysqli_query($dbh, $query);
-      if(mysqli_num_rows($result) > 0){
+      if(mysqli_num_rows($result)){
         $userinfo = mysqli_fetch_array($result);
       
         $_SESSION['sess_username'] = $userinfo['username'];
