@@ -5,6 +5,14 @@
 *
 **************************************************
 
+12.19.2019
+Version 1.4.1
+* Replace deprecated PASSWORD() MySQL functions with SHA1()
+
+09.16.2017
+Version 1.4
+* Add support for PHP 7
+
 08.02.2005
 Version 1.2
 * AudioScrobbler support added for Jukebox and Streaming modes

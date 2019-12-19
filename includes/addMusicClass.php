@@ -80,7 +80,7 @@ class addMusic {
 			  $song = addslashes($song);
 			 $query = "SELECT * FROM mp3act_songs WHERE filename=\"".$path.$song."\"";
           
-       if(mysql_num_rows(mysql_query($query)) == 0){
+       if(mysqli_num_rows(mysqli_query($query)) == 0){
       
       	if(1){
           #get artist
@@ -143,8 +143,8 @@ class addMusic {
             	}
           	 $query = "SELECT artist_id FROM mp3act_artists WHERE artist_name=\"$artist\"";
             //echo $query;
-            $result = mysql_query($query);
-            $artistid = mysql_fetch_array($result);
+            $result = mysqli_query($query);
+            $artistid = mysqli_fetch_array($result);
             if($artistid['artist_id'] > 0){
             	$current_artist = $artistid['artist_id'];
             }
@@ -152,37 +152,37 @@ class addMusic {
             	
            		$query = "INSERT INTO mp3act_artists VALUES (NULL,\"$artist\",\"$prefix\")";
            		
-           		$result = mysql_query($query);
-           		$current_artist = mysql_insert_id();
+           		$result = mysqli_query($query);
+           		$current_artist = mysqli_insert_id();
 						}  
 						
 						
             $query = "SELECT album_id FROM mp3act_albums WHERE album_name=\"$goodData[album]\" AND artist_id=$current_artist";
             //echo $query;
-            $result = mysql_query($query);
-            $album = mysql_fetch_array($result);
+            $result = mysqli_query($query);
+            $album = mysqli_fetch_array($result);
             if($album['album_id'] > 0){
             	$current_album = $album['album_id'];
             }
             else{
            		$query = "INSERT INTO mp3act_albums VALUES (NULL,\"$goodData[album]\",$current_artist,\"$goodData[genre]\",$goodData[year],\"\")";
            		
-           		$result = mysql_query($query);
-           		$current_album = mysql_insert_id();
+           		$result = mysqli_query($query);
+           		$current_album = mysqli_insert_id();
 						}           
             $query = "INSERT INTO mp3act_songs VALUES";
             $query.=" (NULL,$current_artist,$current_album,NOW(),\"$goodData[name]\",$goodData[track],";
             $query.="\"$goodData[length]\",$goodData[size],$goodData[bitrate],\"$goodData[type]\",0,";
             $query.="\"$path$song\",0)";
         	
-            if(mysql_query($query)){
+            if(mysqli_query($query)){
               if($this->displayResults ==1){
                 $results[$i] = "Added ".$goodData["name"]." By ".$goodData["artist"]."<br>\n";
               }
               $i=$i+1;
             }
             else{
-            	echo mysql_error();
+            	echo mysqli_error();
             }
           }
           else{
@@ -216,13 +216,13 @@ class addMusic {
               SEC_TO_TIME(SUM(length)) as total_time, 
               SUM(size)/1024000000 as total_size 
               FROM mp3act_songs"; 
-    $result = mysql_query($query);
-    $row = mysql_fetch_assoc($result);
+    $result = mysqli_query($query);
+    $row = mysqli_fetch_assoc($result);
     $query="DELETE FROM mp3act_stats";
-    mysql_query($query);
+    mysqli_query($query);
     $query2 = "SELECT COUNT(genre_id) as num_genres FROM mp3act_genres";
-     $result2= mysql_query($query2);
-    $row2 = mysql_fetch_assoc($result2);
+     $result2= mysqli_query($query2);
+    $row2 = mysqli_fetch_assoc($result2);
     
     $query3="INSERT INTO mp3act_stats VALUES ( 
             ".$row['num_artists'].", 
@@ -231,18 +231,18 @@ class addMusic {
             ".$row2['num_genres'].",
             \"".$row['total_time']."\",
             \"".$row['total_size']."GB\")"."";
-    mysql_query($query3);
+    mysqli_query($query3);
   }
 
   function updateGenres(){
     mp3act_connect();
     $query = "DELETE FROM mp3act_genres";
-    mysql_query($query);
+    mysqli_query($query);
     $query = "SELECT album_genre FROM mp3act_albums GROUP BY album_genre";
-    $result = mysql_query($query);
-    while($genre = mysql_fetch_assoc($result)){
+    $result = mysqli_query($query);
+    while($genre = mysqli_fetch_assoc($result)){
       $query = "INSERT INTO mp3act_genres VALUES (NULL,\"".$genre['album_genre']."\")";
-      mysql_query($query);
+      mysqli_query($query);
     }
     
   }
@@ -600,12 +600,12 @@ class addMusic {
 		 * that with one.
 		 */
 		$query = 'select album_num from mp3act_music where album = "' . $goodData['album'] . '" and artist = "' . $goodData['artist'] . '" LIMIT 1'; 
-		$result = mysql_query($query);
-        $result  = mysql_fetch_array($result);
+		$result = mysqli_query($query);
+        $result  = mysqli_fetch_array($result);
 		if ($result == null) {
 		  $query = "SELECT MAX(album_num)as count FROM mp3act_music";
-          $result = mysql_query($query);
-          $row = mysql_fetch_array($result);
+          $result = mysqli_query($query);
+          $row = mysqli_fetch_array($result);
           $num_albums = $row['count']+1;// get max and increasetofiles;
 		}
 		else {
@@ -637,14 +637,14 @@ class addMusic {
 		}
 		
 		$query = "SELECT * FROM mp3act_music WHERE filename=\"".$song."\"";
-        if(mysql_num_rows(mysql_query($query)) == 0){
+        if(mysqli_num_rows(mysqli_query($query)) == 0){
 	      $query = "INSERT INTO mp3act_music  (id,artist,album,album_num,track,name,genre,length,size,bitrate,year,date_entered,date_lastplay,filename,numplays,signature,comment,random) ";
           $query.="VALUES (NULL,\"$goodData[artist]\",\"$goodData[album]\",$num_albums,$goodData[track],\"$goodData[name]\",";
           $query.="\"$goodData[genre]\",\"$goodData[length]\",$goodData[size],$goodData[bitrate],$goodData[year],";
           $query.="NOW(),\"0000-00-00 00:00:00\",\"$song\",0,\"$goodData[signature]\",\"$goodData[comment]\",0)";
 	
 	      connect();
-	      if(mysql_query($query)){
+	      if(mysqli_query($query)){
              echo "Added " . $goodData['name'] . " by " . $goodData['artist'] . ".<br>\n";
              if($this->displayResults ==1){
              }

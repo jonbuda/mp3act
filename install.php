@@ -141,7 +141,7 @@ p.pad{
 ?>
 <div id="topinfo">
 	<div class="right">Installation Page</div>
-	<strong>mp3act music box v1.2</strong>
+	<strong>mp3act music box v1.4</strong>
 </div>
 <div id="wrap">
 	<div id="header">
@@ -151,7 +151,7 @@ p.pad{
 	<?php
 	switch($step){
 		case 1:
-			$dbh = mysql_connect();
+			$dbh = mysqli_connect();
 			if($dbh){
 				if(!installed()){
 				  echo "<strong>Welcome to the mp3act installation page</strong><br/><br/>";
@@ -418,7 +418,7 @@ if(!$error){
   			}
   			echo "<a href=\"$GLOBALS[http_url]$GLOBALS[uri_path]/\">Login to your new mp3act server</a><br/>";
   			$random_password = substr(md5(uniqid(microtime())), 0, 6);
-  			$query = "INSERT INTO `mp3act_users` VALUES (NULL, 'admin', 'Admin', 'User', PASSWORD(\"$random_password\"), 10, NOW(), 1, '', 'streaming', 0, 's', '21232f297a57a5a743894a0e4a801fc3', '', '0000-00-00 00:00:00', 1,'','','',0)";
+  			$query = "INSERT INTO `mp3act_users` VALUES (NULL, 'admin', 'Admin', 'User', SHA1(\"$random_password\"), 10, NOW(), 1, '', 'streaming', 0, 's', '21232f297a57a5a743894a0e4a801fc3', '', '0000-00-00 00:00:00', 1,'','','',0)";
   			mysqli_query($dbh, $query);
   			echo "<br/><strong>Username:</strong> Admin<br/><strong>Password:</strong> $random_password (Please change this password as soon as you login.)<br/><br/>";
 

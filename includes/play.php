@@ -5,16 +5,16 @@ mp3act_connect();
 // Play a song
 if($_SERVER['argv'][1] == 1){
   $query = "SELECT song_id,filename FROM mp3act_songs WHERE song_id=".$_SERVER['argv'][3]." ORDER BY track";
-	$result=mysql_query($query);
+	$result=mysqli_query($query);
 	
-	while($row = mysql_fetch_array($result)){	   
+	while($row = mysqli_fetch_array($result)){	   
 	   updateNumPlays($row['song_id'],0,$_SERVER['argv'][2]);
 	   setCurrentSong($row['song_id'],0);
      playLocal($row['filename']);
   }
 	
 	$query = "DELETE FROM mp3act_currentsong";
-	mysql_query($query);
+	mysqli_query($query);
 	if(file_exists("/tmp/mp3act")){ unlink("/tmp/mp3act"); }
 	exec(getSystemSetting("phpbin")." includes/play.php 3 $id > /dev/null 2>&1 &"); 
 
@@ -22,15 +22,15 @@ if($_SERVER['argv'][1] == 1){
 // play an album
 elseif($_SERVER['argv'][1] == 2){
 	$query = "SELECT song_id,filename FROM mp3act_songs WHERE album_id=".$_SERVER['argv'][3]." ORDER BY track";
-	$result=mysql_query($query);
-	while($row = mysql_fetch_array($result)){
+	$result=mysqli_query($query);
+	while($row = mysqli_fetch_array($result)){
 	  updateNumPlays($row['song_id'],0,$_SERVER['argv'][2]);
     setCurrentSong($row['song_id'],0);
     playLocal($row['filename']);
 	}
 	
 	$query = "DELETE FROM mp3act_currentsong";
-	mysql_query($query);
+	mysqli_query($query);
 	if(file_exists("/tmp/mp3act")){ unlink("/tmp/mp3act"); }
 	exec(getSystemSetting("phpbin")." includes/play.php 3 $id > /dev/null 2>&1 &");
 	
@@ -48,15 +48,15 @@ elseif($_SERVER['argv'][1] == 3){
 	  	}
 	  	$newquery = $query.$where.$query2;
 	  	
-	  	$result=mysql_query($newquery);
-			if(mysql_num_rows($result) == 0){
+	  	$result=mysqli_query($newquery);
+			if(mysqli_num_rows($result) == 0){
 				$query = "DELETE FROM mp3act_currentsong";
-				 mysql_query($query);
+				 mysqli_query($query);
 				if(file_exists("/tmp/mp3act")){ unlink("/tmp/mp3act"); }
 				break;
 			}
 			else{ 
-					$row = mysql_fetch_array($result);
+					$row = mysqli_fetch_array($result);
 					$pl_id = $row['pl_id'];
 					updateNumPlays($row['song_id'],0,$row['user_id']);
 					setCurrentSong($row['song_id'],$row['pl_id']);
@@ -65,7 +65,7 @@ elseif($_SERVER['argv'][1] == 3){
     }
 	
 	$query = "DELETE FROM mp3act_currentsong";
-	mysql_query($query);
+	mysqli_query($query);
 	if(file_exists("/tmp/mp3act")){ unlink("/tmp/mp3act"); }
 	
 	
@@ -80,21 +80,21 @@ elseif($_SERVER['argv'][1] == 4){
 	$query1 .= ") AND mp3act_songs.random!=1 ORDER BY RAND()+0 LIMIT 1";
 	
 	while(1){
-	   $result=mysql_query($query1);	   
+	   $result=mysqli_query($query1);	   
 	   
 	    
-		if(mysql_num_rows($result) == 0){
+		if(mysqli_num_rows($result) == 0){
 		  $query = "DELETE FROM mp3act_currentsong";
-	     mysql_query($query);
+	     mysqli_query($query);
 			 $query = "UPDATE mp3act_songs SET random=0";
-	     mysql_query($query);
+	     mysqli_query($query);
 	    if(file_exists("/tmp/mp3act")){ unlink("/tmp/mp3act"); }
 			break;
 		}
 		else{
-		$row = mysql_fetch_array($result);
+		$row = mysqli_fetch_array($result);
 	   $query = "DELETE FROM mp3act_currentsong";
-	   mysql_query($query);
+	   mysqli_query($query);
 		 
 	   updateNumPlays($row['song_id'],1,$_SERVER['argv'][2]);
 	   setCurrentSong($row['song_id'],0,1);
@@ -102,7 +102,7 @@ elseif($_SERVER['argv'][1] == 4){
     }
 	}
 	$query = "DELETE FROM mp3act_currentsong";
-	mysql_query($query);
+	mysqli_query($query);
 	if(file_exists("/tmp/mp3act")){ unlink("/tmp/mp3act"); }
 	
 	
@@ -118,21 +118,21 @@ elseif($_SERVER['argv'][1] == 5){
 	echo $query1;
 	
 	while(1){
-	   $result=mysql_query($query1);	   
+	   $result=mysqli_query($query1);	   
 	   
 	    
-		if(mysql_num_rows($result) == 0){
+		if(mysqli_num_rows($result) == 0){
 		  $query = "DELETE FROM mp3act_currentsong";
-	     mysql_query($query);
+	     mysqli_query($query);
 			 $query = "UPDATE mp3act_songs SET random=0";
-	     mysql_query($query);
+	     mysqli_query($query);
 	    if(file_exists("/tmp/mp3act")){ unlink("/tmp/mp3act"); }
 			break;
 		}
 		else{
-		$row = mysql_fetch_array($result);
+		$row = mysqli_fetch_array($result);
 	   $query = "DELETE FROM mp3act_currentsong";
-	   mysql_query($query);
+	   mysqli_query($query);
 		 
 	   updateNumPlays($row['song_id'],1,$_SERVER['argv'][2]);
      	setCurrentSong($row['song_id'],0,1);
@@ -140,7 +140,7 @@ elseif($_SERVER['argv'][1] == 5){
     }
 	}
 	$query = "DELETE FROM mp3act_currentsong";
-	mysql_query($query);
+	mysqli_query($query);
 	if(file_exists("/tmp/mp3act")){ unlink("/tmp/mp3act"); }
 	
 	
@@ -155,20 +155,20 @@ elseif($_SERVER['argv'][1] == 6){
 	$query1 .= ") AND random!=1 ORDER BY RAND()+0 LIMIT 1";
 	
 	while(1){
-	   $result=mysql_query($query1);	   
+	   $result=mysqli_query($query1);	   
 	    
-		if(mysql_num_rows($result) == 0){
+		if(mysqli_num_rows($result) == 0){
 		  $query = "DELETE FROM mp3act_currentsong";
-	     mysql_query($query);
+	     mysqli_query($query);
 			$query = "UPDATE mp3act_songs SET random=0";
-	     mysql_query($query);
+	     mysqli_query($query);
 	    if(file_exists("/tmp/mp3act")){ unlink("/tmp/mp3act"); }
 			break;
 		}
 		else{
-		$row = mysql_fetch_array($result);
+		$row = mysqli_fetch_array($result);
 	   $query = "DELETE FROM mp3act_currentsong";
-	   mysql_query($query);
+	   mysqli_query($query);
 		 
 	   updateNumPlays($row['song_id'],1,$_SERVER['argv'][2]);
      	setCurrentSong($row['song_id'],0,1);
@@ -176,7 +176,7 @@ elseif($_SERVER['argv'][1] == 6){
     }
 	}
 	$query = "DELETE FROM mp3act_currentsong";
-	mysql_query($query);
+	mysqli_query($query);
 	if(file_exists("/tmp/mp3act")){ unlink("/tmp/mp3act"); }
 	
 	
@@ -187,17 +187,17 @@ else{
  while(1){
  
    $query="SELECT song_id,filename FROM mp3act_songs WHERE random!=1 ORDER BY rand()+0 LIMIT 1";
-   $result=mysql_query($query);
-   $row = mysql_fetch_array($result);
+   $result=mysqli_query($query);
+   $row = mysqli_fetch_array($result);
 	 $query = "DELETE FROM mp3act_currentsong";
-	 mysql_query($query);
+	 mysqli_query($query);
 
    updateNumPlays($row['song_id'],1,$_SERVER['argv'][2]);
 	 setCurrentSong($row['song_id'],0,1);
    playLocal($row['filename']);
  }
     $query = "DELETE FROM mp3act_currentsong";
-	  mysql_query($query);
+	  mysqli_query($query);
 	  if(file_exists("/tmp/mp3act")){ unlink("/tmp/mp3act"); }
 }
 ?>

@@ -81,18 +81,18 @@ class getID3_cached_mysql extends getID3
 	function getID3_cached_mysql($host, $database, $username, $password) {
 
 		// Check for mysql support
-		if (!function_exists('mysql_pconnect')) {
+		if (!function_exists('mysqli_pconnect')) {
 			die('PHP not compiled with mysql support.');
 		}
 
 		// Connect to database
-		$this->connection = mysql_pconnect($host, $username, $password);
+		$this->connection = mysqli_pconnect($host, $username, $password);
 		if (!$this->connection) {
-			die('mysql_pconnect() failed - check permissions and spelling.');
+			die('mysqli_pconnect() failed - check permissions and spelling.');
 		}
 
 		// Select database
-		if (!mysql_select_db($database, $this->connection)) {
+		if (!mysqli_select_db($database, $this->connection)) {
 			die('Cannot use database '.$database);
 		}
 
@@ -100,8 +100,8 @@ class getID3_cached_mysql extends getID3
 		$this->create_table();
 
 		// Check version number and clear cache if changed
-		$this->cursor = mysql_query("SELECT `value` FROM `getid3_cache` WHERE (`filename` = '".GETID3_VERSION."') AND (`filesize` = '-1') AND (`filetime` = '-1') AND (`analyzetime` = '-1')", $this->connection);
-		list($version) = @mysql_fetch_array($this->cursor);
+		$this->cursor = mysqli_query("SELECT `value` FROM `getid3_cache` WHERE (`filename` = '".GETID3_VERSION."') AND (`filesize` = '-1') AND (`filetime` = '-1') AND (`analyzetime` = '-1')", $this->connection);
+		list($version) = @mysqli_fetch_array($this->cursor);
 		if ($version != GETID3_VERSION) {
 			$this->clear_cache();
 		}
@@ -114,8 +114,8 @@ class getID3_cached_mysql extends getID3
 	// public: clear cache
 	function clear_cache() {
 
-		$this->cursor = mysql_query("DELETE FROM `getid3_cache`", $this->connection);
-		$this->cursor = mysql_query("INSERT INTO `getid3_cache` VALUES ('".GETID3_VERSION."', -1, -1, -1, '".GETID3_VERSION."')", $this->connection);
+		$this->cursor = mysqli_query("DELETE FROM `getid3_cache`", $this->connection);
+		$this->cursor = mysqli_query("INSERT INTO `getid3_cache` VALUES ('".GETID3_VERSION."', -1, -1, -1, '".GETID3_VERSION."')", $this->connection);
 	}
 
 
@@ -128,11 +128,11 @@ class getID3_cached_mysql extends getID3
 			// Short-hands
 			$filetime = filemtime($filename);
 			$filesize = filesize($filename);
-			$filenam2 = mysql_escape_string($filename);
+			$filenam2 = mysqli_escape_string($filename);
 
 			// Loopup file
-			$this->cursor = mysql_query("SELECT `value` FROM `getid3_cache` WHERE (`filename`='".$filenam2."') AND (`filesize`='".$filesize."') AND (`filetime`='".$filetime."')", $this->connection);
-			list($result) = @mysql_fetch_array($this->cursor);
+			$this->cursor = mysqli_query("SELECT `value` FROM `getid3_cache` WHERE (`filename`='".$filenam2."') AND (`filesize`='".$filesize."') AND (`filetime`='".$filetime."')", $this->connection);
+			list($result) = @mysqli_fetch_array($this->cursor);
 
 			// Hit
 			if ($result) {
@@ -145,8 +145,8 @@ class getID3_cached_mysql extends getID3
 
 		// Save result
 		if (file_exists($filename)) {
-			$res2 = mysql_escape_string(serialize($result));
-			$this->cursor = mysql_query("INSERT INTO `getid3_cache` (`filename`, `filesize`, `filetime`, `analyzetime`, `value`) VALUES ('".$filenam2."', '".$filesize."', '".$filetime."', '".time()."', '".$res2."')", $this->connection);
+			$res2 = mysqli_escape_string(serialize($result));
+			$this->cursor = mysqli_query("INSERT INTO `getid3_cache` (`filename`, `filesize`, `filetime`, `analyzetime`, `value`) VALUES ('".$filenam2."', '".$filesize."', '".$filetime."', '".time()."', '".$res2."')", $this->connection);
 		}
 		return $result;
 	}
@@ -156,14 +156,14 @@ class getID3_cached_mysql extends getID3
 	// private: (re)create sql table
 	function create_table($drop = false) {
 
-		$this->cursor = mysql_query("CREATE TABLE IF NOT EXISTS `getid3_cache` (
+		$this->cursor = mysqli_query("CREATE TABLE IF NOT EXISTS `getid3_cache` (
 			`filename` VARCHAR(255) NOT NULL DEFAULT '',
 			`filesize` INT(11) NOT NULL DEFAULT '0',
 			`filetime` INT(11) NOT NULL DEFAULT '0',
 			`analyzetime` INT(11) NOT NULL DEFAULT '0',
 			`value` TEXT NOT NULL,
 			PRIMARY KEY (`filename`,`filesize`,`filetime`)) TYPE=MyISAM", $this->connection);
-		echo mysql_error($this->connection);
+		echo mysqli_error($this->connection);
 	}
 }
 

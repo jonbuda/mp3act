@@ -8,8 +8,8 @@
 include('mp3act_config.php');
 
 function mp3act_connect() {
-	if(@mysql_connect($GLOBALS['mysql_server'],$GLOBALS['db_user'],$GLOBALS['db_pw'])){
-		if(@mysql_select_db($GLOBALS['db_name'])){
+	if(@mysqli_connect($GLOBALS['mysql_server'],$GLOBALS['db_user'],$GLOBALS['db_pw'])){
+		if(@mysqli_select_db($GLOBALS['db_name'])){
 			return 1;
 		}
 		return 0;
@@ -43,7 +43,7 @@ function createInviteCode($email){
 		$code = md5(md5($code));
 
 		$query = "INSERT INTO mp3act_invites VALUES (NULL,\"$email\",NOW(),\"$code\")";
-		if(mysql_query($query)){
+		if(mysqli_query($query)){
       
 			$msg = "$email,\n\nYou have been invited to join an mp3act Music Server. Click the link below to begin your registration process.\n\n";
 			$msg .= "$GLOBALS[http_url]$GLOBALS[uri_path]/register.php?invite=$code";
@@ -57,9 +57,9 @@ function createInviteCode($email){
 function checkInviteCode($code){
 	mp3act_connect();
 	$query = "SELECT * FROM mp3act_invites WHERE invite_code=\"$code\"";
-	$result = mysql_query($query);
-	if(mysql_num_rows($result) > 0 ){
-		$row = mysql_fetch_assoc($result);
+	$result = mysqli_query($query);
+	if(mysqli_num_rows($result) > 0 ){
+		$row = mysqli_fetch_assoc($result);
 		return $row['email'];
 	}
 	return 0;
@@ -68,14 +68,14 @@ function checkInviteCode($code){
 function sendPassword($email){
 		mp3act_connect();
   	$query = "SELECT * FROM mp3act_users WHERE email=\"$email\"";
-  	$result = mysql_query($query);
-  	if(mysql_num_rows($result) == 0){
+  	$result = mysqli_query($query);
+  	if(mysqli_num_rows($result) == 0){
   		return 0;
   	}else{
-  		$row = mysql_fetch_array($result);
+  		$row = mysqli_fetch_array($result);
   		$random_password = substr(md5(uniqid(microtime())), 0, 6);
-  		$query = "UPDATE mp3act_users SET password=PASSWORD(\"$random_password\") WHERE user_id=$row[user_id]";
-  		mysql_query($query);
+  		$query = "UPDATE mp3act_users SET password=SHA1(\"$random_password\") WHERE user_id=$row[user_id]";
+  		mysqli_query($query);
   		$msg = "$email,\n\nYou have requested a new password for the mp3act server you are a member of. Your password has been reset to a new random password. When you login please change your password to a new one of your choice.\n\n";
 			$msg .= "Username: $row[username]\nPassword: $random_password\n\nLogin here: $GLOBALS[http_url]$GLOBALS[uri_path]/login.php";
 	    
@@ -94,13 +94,13 @@ function isLoggedIn(){
   elseif(isset($_COOKIE["mp3act_cookie"])){
   	mp3act_connect();
   	$query = "SELECT * FROM mp3act_logins WHERE md5=\"$_COOKIE[mp3act_cookie]\"";
-  	$result = mysql_query($query);
-  	$row = mysql_fetch_array($result);
+  	$result = mysqli_query($query);
+  	$row = mysqli_fetch_array($result);
   	
   	if( (time()-$row['date']) < (60*60*24*30) ){
   		$query = "SELECT * FROM mp3act_users WHERE user_id=$row[user_id]";
-  		$result = mysql_query($query);
-  		$userinfo = mysql_fetch_assoc($result);
+  		$result = mysqli_query($query);
+  		$userinfo = mysqli_fetch_assoc($result);
   		
   			if($userinfo['last_ip'] != $_SERVER['REMOTE_ADDR']){
   				setcookie("mp3act_cookie"," ",time()-3600);
@@ -147,17 +147,17 @@ function switchMode($mode){
 function getSystemSetting($setting){
 	mp3act_connect();
 	$query = "SELECT $setting FROM mp3act_settings WHERE id=1";
-	$result = mysql_query($query);
-	$row = mysql_fetch_array($result);
+	$result = mysqli_query($query);
+	$row = mysqli_fetch_array($result);
 	return $row[$setting];
 }
 
 function setCurrentSong($song_id,$pl_id,$rand=0){
 	mp3act_connect();
 	$query = "DELETE FROM mp3act_currentsong";
-	mysql_query($query);
+	mysqli_query($query);
 	$query = "INSERT INTO mp3act_currentsong VALUES ($song_id,$pl_id,$rand)";
-	mysql_query($query);
+	mysqli_query($query);
 }
 
 function getCurrentSong($curArtist, $curSong){
@@ -165,14 +165,14 @@ function getCurrentSong($curArtist, $curSong){
 
 	mp3act_connect();
 	$query = "SELECT mp3act_currentsong.random,mp3act_currentsong.pl_id,mp3act_artists.artist_name,mp3act_artists.prefix, mp3act_songs.name FROM mp3act_artists,mp3act_songs,mp3act_currentsong WHERE mp3act_currentsong.song_id=mp3act_songs.song_id AND mp3act_songs.artist_id=mp3act_artists.artist_id";
-	$result = mysql_query($query);
-	if(mysql_num_rows($result) == 0){
+	$result = mysqli_query($query);
+	if(mysqli_num_rows($result) == 0){
 		$data[] = "<strong>No Songs Playing</strong><span id='artist'></span><span id='song'></span>";
 		$data[] = 0;
 		$data[] = 0;
 		return $data;
 	}
-	$row = mysql_fetch_array($result);
+	$row = mysqli_fetch_array($result);
 	if($row['artist_name'] == $curArtist && $row['name'] == $curSong){
 		$data[] = 1;
 		$data[] = $row['pl_id'];
@@ -191,7 +191,7 @@ function insertScrobbler($song_id,$user_id,$type='jukebox'){
   mp3act_connect();
   if(hasScrobbler($user_id,$type)){
     $sql = "INSERT INTO mp3act_audioscrobbler VALUES (NULL,$user_id,$song_id,\"".time()."\")";
-    if(mysql_query($sql)){
+    if(mysqli_query($sql)){
       submitScrobbler($user_id);
       return TRUE;
     }
@@ -203,8 +203,8 @@ function hasScrobbler($user_id,$type='jukebox'){
   $mode['jukebox'] = '(as_type=1 OR as_type=2)';
   $mode['streaming'] = 'as_type=2';
   $sql = "SELECT as_username FROM mp3act_users WHERE user_id=$user_id AND $mode[$type] AND as_username!='' AND as_password!=''";
-  $result = mysql_query($sql);
-  if(mysql_num_rows($result)>0)
+  $result = mysqli_query($sql);
+  if(mysqli_num_rows($result)>0)
     return TRUE;
   return FALSE;
 }
@@ -213,14 +213,14 @@ function getScrobblerStats($user_id){
   $as = array();
   mp3act_connect();
   $sql = "SELECT as_username,as_lastresult FROM mp3act_users WHERE user_id=$user_id";
-  $result = mysql_query($sql);
-  $row = mysql_fetch_array($result);
+  $result = mysqli_query($sql);
+  $row = mysqli_fetch_array($result);
   $as['username'] = $row['as_username'];
   $as['last_result'] = $row['as_lastresult'];
   
   $sql = "SELECT COUNT(as_id) as count FROM mp3act_audioscrobbler WHERE user_id=$user_id";
-  $result = mysql_query($sql);
-    $row = mysql_fetch_array($result);
+  $result = mysqli_query($sql);
+    $row = mysqli_fetch_array($result);
     $as['count'] = $row['count'];
         
   return $as;
@@ -234,12 +234,12 @@ function submitScrobbler($user_id){
 function genreform(){
   mp3act_connect();
   $query = "SELECT * FROM mp3act_genres ORDER BY genre";
-  $result = mysql_query($query);
+  $result = mysqli_query($query);
   
   $output = "<select id=\"genre\" name=\"genre\" onchange=\"updateBox('genre',this.options[selectedIndex].value); return false;\">
     <option value=\"\" selected>Choose Genre..";
   
-  while($genre = mysql_fetch_array($result)){
+  while($genre = mysqli_fetch_array($result)){
     $output .= "  <option value=\"$genre[genre]\">$genre[genre]\n";
   }
   $output .= "</select>";
@@ -250,9 +250,9 @@ function genreform(){
 function getUser($username){
   mp3act_connect();
   $sql = "SELECT user_id FROM mp3act_users WHERE username=\"$username\"";
-   $result = mysql_query($sql);
+   $result = mysqli_query($sql);
 
-  if(mysql_num_rows($result)>0)
+  if(mysqli_num_rows($result)>0)
     return 1;
   return 0;
 }
@@ -283,24 +283,24 @@ function buildBreadcrumb($page,$parent,$parentitem,$child,$childitem){
 	switch($child){
 		case 'album':
 			$query = "SELECT mp3act_albums.album_name,mp3act_artists.artist_name,mp3act_artists.artist_id,mp3act_artists.prefix FROM mp3act_albums,mp3act_artists WHERE mp3act_albums.artist_id=mp3act_artists.artist_id AND mp3act_albums.album_id=$childitem";
-			$result = mysql_query($query);
-			$row = mysql_fetch_array($result);
+			$result = mysqli_query($query);
+			$row = mysqli_fetch_array($result);
 			$albums = '';
 			$query = "SELECT album_name,album_id FROM mp3act_albums WHERE artist_id=$row[artist_id] ORDER BY album_name";
-			$result = mysql_query($query);
-			while($row2 = mysql_fetch_array($result)){
+			$result = mysqli_query($query);
+			while($row2 = mysqli_fetch_array($result)){
 				$albums .= "<li><a href=\"#\" onclick=\"updateBox('album',$row2[album_id]); return false;\" title=\"View Details of $row2[album_name]\">$row2[album_name]</a></li>";
 			}
 			$childoutput .= "<span><a href=\"#\" onclick=\"updateBox('artist'," . $row['artist_id'] . "); return false;\">" . $row['prefix'] . " " . $row['artist_name'] . "</a><ul>$albums</ul></span> &#187; " . htmlentities($row['album_name']);
 		break;
 		case 'artist':
 			$query = "SELECT artist_name,prefix FROM mp3act_artists WHERE artist_id=$childitem";
-			$result = mysql_query($query);
-			$row = mysql_fetch_array($result);
+			$result = mysqli_query($query);
+			$row = mysqli_fetch_array($result);
 			$albums = '';
 			$query = "SELECT album_name,album_id FROM mp3act_albums WHERE artist_id=$childitem ORDER BY album_name";
-			$result = mysql_query($query);
-			while($row2 = mysql_fetch_array($result)){
+			$result = mysqli_query($query);
+			while($row2 = mysqli_fetch_array($result)){
 				$albums .= "<li><a href=\"#\" onclick=\"updateBox('album',$row2[album_id]); return false;\" title=\"View Details of $row2[album_name]\">$row2[album_name]</a></li>";
 			}
 			$childoutput .= "<span><a href=\"#\" onclick=\"updateBox('artist',$childitem); return false;\">$row[prefix] $row[artist_name]</a><ul>$albums</ul></span>";
@@ -323,8 +323,8 @@ function buildBreadcrumb($page,$parent,$parentitem,$child,$childitem){
 		break;
 		case 'genre':
 			$query = "SELECT album_name FROM mp3act_albums WHERE album_id=$childitem";
-			$result = mysql_query($query);
-			$row = mysql_fetch_array($result);
+			$result = mysqli_query($query);
+			$row = mysqli_fetch_array($result);
 			$parentoutput .= "<a href=\"#\" onclick=\"updateBox('genre','$parentitem'); return false;\">$parentitem</a> &#187; ";
 		break;
 		case 'all':
@@ -393,14 +393,14 @@ function musicLookup($type,$itemid){
                 WHERE artist_name LIKE '$itemid%'
                 ORDER BY artist_name";
     }
-    $result = mysql_query($query);
+    $result = mysqli_query($query);
     $output = "<div class=\"head\">";
 			$output .= "<h2>Artists Beginning with '".strtoupper($itemid)."'</h2></div>";
 			$output .= "<p>
 				<strong>Artist Listing</strong></p>
 				<ul>";
 					$count =1;
-    while($row = mysql_fetch_array($result)){
+    while($row = mysqli_fetch_array($result)){
     ($count%2 == 0 ? $alt = "class=\"alt\"" : $alt = '');
 			$output .= "<li $alt><a href=\"#\" onclick=\"updateBox('artist',$row[artist_id]); return false;\" title=\"View Albums for $row[prefix] $row[artist_name]\">$row[prefix] $row[artist_name]</a></li>\n";
 			$count++;
@@ -418,9 +418,9 @@ function musicLookup($type,$itemid){
 				<ul>";
 		$start = $itemid;
 		$query = "SELECT mp3act_artists.artist_name,mp3act_artists.prefix,mp3act_albums.* FROM mp3act_albums,mp3act_artists WHERE mp3act_albums.artist_id=mp3act_artists.artist_id ORDER BY artist_name,album_name"; /* LIMIT $start,30"; */
-		$result = mysql_query($query);
+		$result = mysqli_query($query);
 			$count = 1;
-		while($row = mysql_fetch_array($result)){
+		while($row = mysqli_fetch_array($result)){
 			($count%2 == 0 ? $alt = "class=\"alt\"" : $alt = '');
 			$output .= "<li $alt><a href=\"#\" onclick=\"pladd('album'," . $row['album_id'] . "); return false;\" title=\"Add Album to Current Playlist\"><img src=\"img/add.gif\" /></a> <a href=\"#\" onclick=\"play('album'," . $row['album_id'] . "); return false;\" title=\"Play this Album Now\"><img src=\"img/play.gif\" /></a> <a href=\"#\" onclick=\"updateBox('album'," . $row['album_id'] . "); return false;\" title=\"View Details of " . $row['album_name'] . "\">" . $row['prefix'] . " " . $row['artist_name'] . " - " . $row['album_name'] . " " . (($row['album_year'] != 0) ? ("<em>(" . $row['album_year'] . ")</em>") : ("")) . "</a></li>\n";
 			
@@ -431,8 +431,8 @@ function musicLookup($type,$itemid){
 	
 	case 'album':
 		$query = "SELECT mp3act_albums.*,mp3act_artists.artist_name,mp3act_artists.prefix,COUNT(mp3act_songs.song_id) as tracks,SEC_TO_TIME(SUM(mp3act_songs.length)) as time FROM mp3act_albums,mp3act_artists,mp3act_songs WHERE mp3act_albums.album_id=$itemid AND mp3act_albums.artist_id=mp3act_artists.artist_id AND mp3act_songs.album_id=$itemid GROUP BY mp3act_songs.album_id";
-		$result = mysql_query($query);
-		$row = mysql_fetch_array($result);
+		$result = mysqli_query($query);
+		$row = mysqli_fetch_array($result);
 			
 			$album_art='';
 			
@@ -458,9 +458,9 @@ function musicLookup($type,$itemid){
 			$output .= "<ul>\n";
 			$output .= "<img id='bigart' src=\"art/$row[album_art]\" />\n";
 		$query = "SELECT *,SEC_TO_TIME(length) as length FROM mp3act_songs WHERE album_id=$itemid ORDER BY track";
-		$result = mysql_query($query);
+		$result = mysqli_query($query);
 		$count=1;
-		while($row = mysql_fetch_array($result)){
+		while($row = mysqli_fetch_array($result)){
 			($count%2 == 0 ? $alt = "class=\"alt\"" : $alt = '');
 			$output .= "<li $alt ondblclick=\"pladd('song',$row[song_id]); return false;\" ><a href=\"#\" onclick=\"pladd('song',$row[song_id]); return false;\" title=\"Add Song to Current Playlist\"><img src=\"img/add.gif\" /></a> <a href=\"#\" onclick=\"play('song',$row[song_id]); return false;\" title=\"Play this Song Now\"><img src=\"img/play.gif\" /></a> $row[track]. $row[name]<p>$row[numplays] Plays<br/><em>$row[length]</em></p></li>\n";
 			$count++;
@@ -470,8 +470,8 @@ function musicLookup($type,$itemid){
 	break;
 	case 'genre':
 		$query = "SELECT mp3act_artists.artist_id,mp3act_artists.artist_name,mp3act_artists.prefix FROM mp3act_artists,mp3act_albums WHERE mp3act_albums.album_genre='$itemid' AND mp3act_artists.artist_id=mp3act_albums.artist_id GROUP BY mp3act_artists.artist_id ORDER BY mp3act_artists.artist_name";
-		$result = mysql_query($query);
-		$row = mysql_fetch_array($result);
+		$result = mysqli_query($query);
+		$row = mysqli_fetch_array($result);
 		
 			$output = "<div class=\"head\">";
 			$output .= "<h2>Artists for Genre '$itemid'</h2></div>";
@@ -479,10 +479,10 @@ function musicLookup($type,$itemid){
 				<strong>Artist Listing</strong></p>
 				<ul>";
 			
-		$result = mysql_query($query);
+		$result = mysqli_query($query);
 		
 		$count=1;
-		while($row = mysql_fetch_array($result)){
+		while($row = mysqli_fetch_array($result)){
 			($count%2 == 0 ? $alt = "class=\"alt\"" : $alt = '');
 			$output .= "<li $alt><a href=\"#\" onclick=\"updateBox('artist',$row[artist_id]); return false;\" title=\"View Albums for $row[artist_name]\">$row[prefix] $row[artist_name]</a></li>\n";
 			$count++;
@@ -491,8 +491,8 @@ function musicLookup($type,$itemid){
 	break;
 	case 'artist':
 		$query = "SELECT artist_id,artist_name,prefix FROM mp3act_artists WHERE artist_id=$itemid";
-		$result = mysql_query($query);
-		$row = mysql_fetch_array($result);
+		$result = mysqli_query($query);
+		$row = mysqli_fetch_array($result);
 		
 			$output = "<div class=\"head\">";
 			$output .= "<h2>$row[prefix] $row[artist_name]</h2></div>";
@@ -501,9 +501,9 @@ function musicLookup($type,$itemid){
 			$output .= "<ul>\n";
 			
 		$query = "SELECT mp3act_albums.* FROM mp3act_albums WHERE mp3act_albums.artist_id=$itemid ORDER BY mp3act_albums.album_name";
-		$result = mysql_query($query);
+		$result = mysqli_query($query);
 		$count=1;
-		while($row = mysql_fetch_array($result)){
+		while($row = mysqli_fetch_array($result)){
 			($count%2 == 0 ? $alt = "class=\"alt\"" : $alt = '');
 			$output .= "<li $alt><a href=\"#\" onclick=\"pladd('album'," . $row['album_id'] . "); return false;\" title=\"Add Album to Current Playlist\"><img src=\"img/add.gif\" /></a> <a href=\"#\" onclick=\"play('album'," . $row['album_id'] . "); return false;\" title=\"Play this Album Now\"><img src=\"img/play.gif\" /></a> <a href=\"#\" onclick=\"updateBox('album'," . $row['album_id'] . "); return false;\" title=\"View Details of " . $row['album_name'] . "\">" . $row['album_name'] . " " . (($row['album_year'] != 0) ? ("<em>(" . $row['album_year'] . ")</em>") : (""))."</a></li>\n";
 			$count++;
@@ -542,12 +542,12 @@ function musicLookup($type,$itemid){
 	case 'prefs':
 			$query = "SELECT DATE_FORMAT(mp3act_users.date_created,'%M %D, %Y') as date_created FROM mp3act_users WHERE mp3act_users.user_id=$_SESSION[sess_userid]";
 			$query2 = "SELECT COUNT(play_id) as playcount FROM mp3act_playhistory WHERE user_id=$_SESSION[sess_userid] GROUP BY user_id";
-			$result = mysql_query($query);
-			$result2 = mysql_query($query2);
+			$result = mysqli_query($query);
+			$result2 = mysqli_query($query2);
 
-			$row = mysql_fetch_array($result);
-			$row2 = mysql_fetch_array($result2);
-			if(mysql_num_rows($result2) == 0){
+			$row = mysqli_fetch_array($result);
+			$row2 = mysqli_fetch_array($result2);
+			if(mysqli_num_rows($result2) == 0){
 				$row2['playcount'] = 0;
 			}
 			$dayssince = (time()-strtotime($row['date_created'])) / (60 * 60 * 24);
@@ -598,33 +598,33 @@ function musicLookup($type,$itemid){
 	break;
 	case 'playlists':
 			$query = "SELECT *,SEC_TO_TIME(time) AS time2 FROM mp3act_saved_playlists WHERE private=0";
-			$result = mysql_query($query);
+			$result = mysqli_query($query);
 			
 			$output = "<div class=\"head\">";
 			$output .= "<h2>Saved Playlists</h2></div>";
 			$output .= "<p><strong>Public Playlists</strong></p>\n";
 			$output .= "<ul>\n";
-			if(mysql_num_rows($result) == 0)
+			if(mysqli_num_rows($result) == 0)
 				$output .= "No Public Playlists";
-			while ($row = mysql_fetch_array($result)){
+			while ($row = mysqli_fetch_array($result)){
 				$output .= "<li><a href=\"#\" onclick=\"pladd('playlist',$row[playlist_id]); return false;\" title='Load this Saved Playlist'><img src=\"img/add.gif\" /></a> ".(accessLevel(10) ? "<a href=\"#\" onclick=\"deletePlaylist($row[playlist_id]); return false;\" title='DELETE this Saved Playlist'><img src=\"img/rem.gif\" /></a>": "")." <a onclick=\"updateBox('saved_pl',$row[playlist_id]); \" title='Click to View Playlist' href='#'>$row[playlist_name] - $row[songcount] Songs ($row[time2])</a></li>";
 			}
 			$output .= "</ul>\n";
 			$output .= "<p><strong>Your Private Playlists</strong></p>\n";
 			$query = "SELECT *,SEC_TO_TIME(time) AS time2 FROM mp3act_saved_playlists WHERE private=1 AND user_id=$_SESSION[sess_userid] ORDER BY playlist_id DESC";
-			$result = mysql_query($query);
+			$result = mysqli_query($query);
 			$output .= "<ul>\n";
-			if(mysql_num_rows($result) == 0)
+			if(mysqli_num_rows($result) == 0)
 				$output .= "No Private Playlists";
-			while ($row = mysql_fetch_array($result)){
+			while ($row = mysqli_fetch_array($result)){
 				$output .= "<li><a href=\"#\" onclick=\"pladd('playlist',$row[playlist_id]); return false;\" title='Load this Saved Playlist'><img src=\"img/add.gif\" /></a> <a href=\"#\" onclick=\"deletePlaylist($row[playlist_id]); return false;\" title='DELETE this Saved Playlist'><img src=\"img/rem.gif\" /></a> <a onclick=\"updateBox('saved_pl',$row[playlist_id]); \" title='Click to View Playlist' href='#'>$row[playlist_name] - $row[songcount] Songs ($row[time2])</a></li>";
 			}
 			$output .= "</ul>\n";
 	break;
 	case 'saved_pl':
 			$query = "SELECT *,SEC_TO_TIME(time) AS time2 FROM mp3act_saved_playlists WHERE playlist_id=$itemid";
-			$result = mysql_query($query);
-			$row = mysql_fetch_array($result);
+			$result = mysqli_query($query);
+			$row = mysqli_fetch_array($result);
 			$output = "<div class=\"head\">";
 			$output .= "<div class=\"right\"><a href=\"#\" onclick=\"pladd('playlist',$row[playlist_id]); return false;\" title=\"Load Playlist\">load playlist</a></div>";
 
@@ -637,8 +637,8 @@ function musicLookup($type,$itemid){
 		$count = 0;
 		foreach($songs as $song){
 			$query = "SELECT mp3act_songs.*,SEC_TO_TIME(mp3act_songs.length) AS length,mp3act_artists.artist_name FROM mp3act_artists,mp3act_songs WHERE mp3act_songs.song_id=$song AND mp3act_artists.artist_id=mp3act_songs.artist_id";
-			$result = mysql_query($query);
-			$row = mysql_fetch_array($result);
+			$result = mysqli_query($query);
+			$row = mysqli_fetch_array($result);
 	($count%2 == 0 ? $alt = "class=\"alt\"" : $alt = '');
 			$output .= "<li $alt>$row[artist_name] - $row[name]<p>$row[numplays] Plays<br/><em>$row[length]</em></p></li>";
 			$count++;
@@ -668,14 +668,14 @@ function musicLookup($type,$itemid){
 	break;
 	case 'stats':
 		$query = "SELECT * FROM mp3act_stats";
-			$result = mysql_query($query);
-			$row = mysql_fetch_array($result);
+			$result = mysqli_query($query);
+			$row = mysqli_fetch_array($result);
 			$query = "SELECT COUNT(user_id) AS users FROM mp3act_users";
-			$result = mysql_query($query);
-			$row2 = mysql_fetch_array($result);
+			$result = mysqli_query($query);
+			$row2 = mysqli_fetch_array($result);
 			$query = "SELECT COUNT(play_id) AS songs FROM mp3act_playhistory";
-			$result = mysql_query($query);
-			$row3 = mysql_fetch_array($result);
+			$result = mysqli_query($query);
+			$row3 = mysqli_fetch_array($result);
 			
 			$output = "<div class=\"head\">";
 			$output .= "<h2>Server Statistics</h2></div>";
@@ -705,13 +705,13 @@ function musicLookup($type,$itemid){
 			WHERE mp3act_songs.album_id=mp3act_albums.album_id 
 			AND mp3act_artists.artist_id=mp3act_songs.artist_id 
 			GROUP BY mp3act_songs.album_id ORDER BY mp3act_songs.date_entered DESC LIMIT 40";
-			$result = mysql_query($query);
+			$result = mysqli_query($query);
 			
 			$output = "<div class=\"head\">";
 			$output .= "<div class=\"right\"><a href=\"#\" onclick=\"switchPage('stats'); return false;\" title=\"Return to Statistics Page\">back</a></div>";
 			$output .= "<h2>Recently Added Albums</h2></div><ul>";
 			$count=1;
-		while($row = mysql_fetch_array($result)){
+		while($row = mysqli_fetch_array($result)){
 			($count%2 == 0 ? $alt = "class=\"alt\"" : $alt = '');
 			$output .= "<li $alt><small>$row[pubdate]</small> <a href=\"#\" onclick=\"pladd('album',$row[album_id]); return false;\" title=\"Add Album to Current Playlist\"><img src=\"img/add.gif\" /></a> <a href=\"#\" onclick=\"play('album',$row[album_id]); return false;\" title=\"Play this Album Now\"><img src=\"img/play.gif\" /></a> <a href=\"#\" onclick=\"updateBox('album',$row[album_id]); return false;\" title=\"View Details of $row[album_name]\"><em>$row[artist_name]</em> - $row[album_name]</a></li>";		
 			$count++;
@@ -728,13 +728,13 @@ function musicLookup($type,$itemid){
 			AND mp3act_artists.artist_id=mp3act_songs.artist_id 
 			AND mp3act_songs.numplays > 0 
 			ORDER BY mp3act_songs.numplays DESC LIMIT 40";
-			$result = mysql_query($query);
+			$result = mysqli_query($query);
 			
 			$output = "<div class=\"head\">";
 			$output .= "<div class=\"right\"><a href=\"#\" onclick=\"switchPage('stats'); return false;\" title=\"Return to Statistics Page\">back</a></div>";
 			$output .= "<h2>Top Played Songs</h2></div><ul>";
 			$count=1;
-		while($row = mysql_fetch_array($result)){
+		while($row = mysqli_fetch_array($result)){
 			($count%2 == 0 ? $alt = "class=\"alt\"" : $alt = '');
 			$output .= "<li $alt><small>$row[numplays] Plays</small> <a href=\"#\" onclick=\"pladd('song',$row[song_id]); return false;\" title=\"Add Song to Current Playlist\"><img src=\"img/add.gif\" /></a> <a href=\"#\" onclick=\"play('song',$row[song_id]); return false;\" title=\"Play this Song Now\"><img src=\"img/play.gif\" /></a> <em>$row[artist_name]</em> - $row[name]</li>";		
 			$count++;
@@ -749,13 +749,13 @@ function musicLookup($type,$itemid){
 			WHERE mp3act_songs.song_id=mp3act_playhistory.song_id
 			AND mp3act_artists.artist_id=mp3act_songs.artist_id 
 			ORDER BY mp3act_playhistory.play_id DESC LIMIT 40";
-			$result = mysql_query($query);
+			$result = mysqli_query($query);
 			
 			$output = "<div class=\"head\">";
 			$output .= "<div class=\"right\"><a href=\"#\" onclick=\"switchPage('stats'); return false;\" title=\"Return to Statistics Page\">back</a></div>";
 			$output .= "<h2>Recently Played Songs</h2></div><ul>";
 			$count=1;
-		while($row = mysql_fetch_array($result)){
+		while($row = mysqli_fetch_array($result)){
 			($count%2 == 0 ? $alt = "class=\"alt\"" : $alt = '');
 			$output .= "<li $alt><small>$row[playdate]</small> <a href=\"#\" onclick=\"pladd('song',$row[song_id]); return false;\" title=\"Add Song to Current Playlist\"><img src=\"img/add.gif\" /></a> <a href=\"#\" onclick=\"play('song',$row[song_id]); return false;\" title=\"Play this Song Now\"><img src=\"img/play.gif\" /></a> <em>$row[artist_name]</em> - $row[name]</li>";		
 			$count++;
@@ -773,13 +773,13 @@ function editSettings($update,$invite,$downloads,$amazonid,$upload_path,$sample_
 		mp3act_connect();
 		if($update){
 			$query = "UPDATE mp3act_settings SET invite_mode=$invite,sample_mode=$sample_mode,downloads=$downloads,amazonid=\"$amazonid\",upload_path=\"$upload_path\",mp3bin=\"$mp3bin\",lamebin=\"$lamebin\",phpbin=\"$phpbin\" WHERE id=1";
-				mysql_query($query);
+				mysqli_query($query);
 				return 1;
 		}
 		
 		$query = "SELECT * FROM mp3act_settings WHERE id=1";
-				$result = mysql_query($query);
-				$row = mysql_fetch_array($result);
+				$result = mysqli_query($query);
+				$row = mysqli_fetch_array($result);
 				
 			$output = "<div class=\"head\">";
 			$output .= "<h2>Edit mp3act System Settings</h2></div>";
@@ -808,8 +808,8 @@ function adminAddUser($firstname='',$lastname='',$username='',$email='',$level='
       return 0;
     $query = "INSERT INTO mp3act_users VALUES 
     							(NULL,\"".$username."\",\"".$firstname."\",\"".$lastname."\",
-    							PASSWORD(\"".$pass."\"),$level,NOW(),1,\"".$email."\",\"streaming\",0,\"s\",\"$md5\",\"\",\"\",1,\"\",\"\",\"\",0)";
-    if(mysql_query($query)){
+    							SHA1(\"".$pass."\"),$level,NOW(),1,\"".$email."\",\"streaming\",0,\"s\",\"$md5\",\"\",\"\",1,\"\",\"\",\"\",0)";
+    if(mysqli_query($query)){
       return 1;
     }
     
@@ -837,8 +837,8 @@ function adminEditUsers($userid=0,$action='list',$active='',$perms=''){
 	if($userid!=0){
 		if($action == 'user'){
 			$query = "SELECT * FROM mp3act_users WHERE user_id=$userid";
-		  $result = mysql_query($query);
-		  $row = mysql_fetch_array($result);
+		  $result = mysqli_query($query);
+		  $row = mysqli_fetch_array($result);
 		  $output = "<div class=\"head\">";
 			$output .= "<h2>Edit User - $row[username]</h2></div>";
 			$output .= "<form onsubmit=\"return adminEditUsers($userid,'mod',this)\" method='get' action=''>\n";
@@ -850,24 +850,24 @@ function adminEditUsers($userid=0,$action='list',$active='',$perms=''){
 		}
 		elseif($action=='mod'){
 			$query = "UPDATE mp3act_users SET active=$active, accesslevel=$perms WHERE user_id=$userid";
-			$result = mysql_query($query);
+			$result = mysqli_query($query);
 			return 2;
 		}
 		elseif($action=='del'){
 			$query = "DELETE FROM mp3act_users WHERE user_id=$userid";
-		$result = mysql_query($query);
+		$result = mysqli_query($query);
 		return 1;
 		}
 	}
 	else{
 		$query = "SELECT * FROM mp3act_users WHERE username!=\"Admin\"";
-		$result = mysql_query($query);
+		$result = mysqli_query($query);
 		$output = "<div class=\"head\">";
 					$output .= "<div class=\"right\"><a href=\"#\" onclick=\"switchPage('admin'); return false;\" title=\"Return to Admin Menu\">return to admin</a></div>";
 
 			$output .= "<h2>Edit mp3act Users</h2></div><ul>";
 			$count=1;
-		while($row = mysql_fetch_array($result)){
+		while($row = mysqli_fetch_array($result)){
 			($count%2 == 0 ? $alt = "class=\"alt\"" : $alt = '');
 			$output .= "<li $alt><span class='user'><strong>$row[username]</strong> - ($row[firstname] $row[lastname])</span> <span class='links'><a href='#' title='Edit User Settings' onclick=\"adminEditUsers($row[user_id],'user'); return false;\" >edit user</a> | <a href='#' title='Delete the User' onclick=\"adminEditUsers($row[user_id],'del'); return false;\" >delete user</a></span></li>";		
 			$count++;
@@ -883,12 +883,12 @@ function editUser($type,$input1,$input2,$input3,$input4,$input5,$input6,$input7)
 	case 'info':
 			if(!empty($input1)){
 				$query = "UPDATE mp3act_users SET firstname=\"$input1\",lastname=\"$input2\",email=\"$input3\" WHERE user_id=$_SESSION[sess_userid]";
-				mysql_query($query);
+				mysqli_query($query);
 				return 1;
 			}
 			$query = "SELECT * FROM mp3act_users WHERE user_id=$_SESSION[sess_userid]";
-			$result = mysql_query($query);
-			$row = mysql_fetch_array($result);
+			$result = mysqli_query($query);
+			$row = mysqli_fetch_array($result);
 			
 			$output = "<div class=\"head\">";
 			$output .= "<h2>$_SESSION[sess_firstname] $_SESSION[sess_lastname]'s Account Information</h2></div>";
@@ -904,12 +904,12 @@ function editUser($type,$input1,$input2,$input3,$input4,$input5,$input6,$input7)
 	case 'settings':
 			if(!empty($input1)){
 				$query = "UPDATE mp3act_users SET default_mode=\"$input1\",default_bitrate=$input2,default_stereo=\"$input3\",theme_id=$input4,as_username=\"$input5\",as_password=\"$input6\",as_type=$input7 WHERE user_id=$_SESSION[sess_userid]";
-				mysql_query($query);
+				mysqli_query($query);
 				return 1;
 			}
 			$query = "SELECT * FROM mp3act_users WHERE user_id=$_SESSION[sess_userid]";
-			$result = mysql_query($query);
-			$row = mysql_fetch_array($result);
+			$result = mysqli_query($query);
+			$row = mysqli_fetch_array($result);
 			
 			$output = "<div class=\"head\">";
 			$output .= "<h2>$_SESSION[sess_firstname] $_SESSION[sess_lastname]'s Account Settings</h2></div>";
@@ -949,13 +949,13 @@ function editUser($type,$input1,$input2,$input3,$input4,$input5,$input6,$input7)
 	break;
 	case 'pass':
 			if(!empty($input1)){
-				$query = "UPDATE mp3act_users SET password=PASSWORD(\"$input2\") WHERE user_id=$_SESSION[sess_userid]";
-				mysql_query($query);
+				$query = "UPDATE mp3act_users SET password=SHA1(\"$input2\") WHERE user_id=$_SESSION[sess_userid]";
+				mysqli_query($query);
 				return 1;
 			}
 			$query = "SELECT * FROM mp3act_users WHERE user_id=$_SESSION[sess_userid]";
-			$result = mysql_query($query);
-			$row = mysql_fetch_array($result);
+			$result = mysqli_query($query);
+			$row = mysqli_fetch_array($result);
 			
 			$output = "<div class=\"head\">";
 			$output .= "<h2>$_SESSION[sess_firstname] $_SESSION[sess_lastname]'s Account Password</h2></div>";
@@ -978,22 +978,22 @@ function getRandItems($type){
 	switch($type){
 		case 'artists':
 			$query = "SELECT * FROM mp3act_artists ORDER BY artist_name";
-			$result = mysql_query($query);
-			while($row = mysql_fetch_array($result)){
+			$result = mysqli_query($query);
+			while($row = mysqli_fetch_array($result)){
 				$options .= "<option value=$row[artist_id]>$row[prefix] $row[artist_name]</option>\n";
 			}
 		break;
 		case 'genre':
 			$query = "SELECT genre_id,genre FROM mp3act_genres ORDER BY genre";
-			$result = mysql_query($query);
-			while($row = mysql_fetch_array($result)){
+			$result = mysqli_query($query);
+			while($row = mysqli_fetch_array($result)){
 				$options .= "<option value=$row[genre_id]>$row[genre]</option>\n";
 			}
 		break;
 		case 'albums':
 			$query = "SELECT mp3act_artists.artist_name,mp3act_artists.prefix,mp3act_albums.album_id,mp3act_albums.album_name FROM mp3act_albums,mp3act_artists WHERE mp3act_albums.artist_id=mp3act_artists.artist_id ORDER BY artist_name,album_name";
-			$result = mysql_query($query);
-			while($row = mysql_fetch_array($result)){
+			$result = mysqli_query($query);
+			while($row = mysqli_fetch_array($result)){
 				$options .= "<option value=$row[album_id]>$row[prefix] $row[artist_name] - $row[album_name]</option>\n";
 			}
 		break;
@@ -1021,8 +1021,8 @@ function searchMusic($terms,$option){
 
 	$query .= " ORDER BY mp3act_artists.artist_name,mp3act_albums.album_name,mp3act_songs.track";
 	
-	$result = mysql_query($query);
-	$count = mysql_num_rows($result);
+	$result = mysqli_query($query);
+	$count = mysqli_num_rows($result);
 
 			$output = "<div class=\"head\">";
 			$output .= "<div class=\"right\"><a href=\"#\" onclick=\"switchPage('search'); return false;\" title=\"Begin a New Search\">new search</a></div>";
@@ -1030,7 +1030,7 @@ function searchMusic($terms,$option){
 			$output .= "<ul>\n";
 		if($count>0){
 			$count=1;
-			while($row = mysql_fetch_array($result)){
+			while($row = mysqli_fetch_array($result)){
 				($count%2 == 0 ? $alt = "class=\"alt\"" : $alt = '');
 				$output .= "<li $alt><a href=\"#\" onclick=\"pladd('song',$row[song_id]); return false;\" title=\"Add Song to Current Playlist\"><img src=\"img/add.gif\" /></a> <a href=\"#\" onclick=\"play('song',$row[song_id]); return false;\" title=\"Play this Song Now\"><img src=\"img/play.gif\" /></a> $row[prefix] $row[artist_name] - $row[name]<p>Album: $row[album_name]<br/>Track: $row[track]<br/><em>$row[length]</em></p></li>\n";
 				$count++;
@@ -1045,9 +1045,9 @@ function viewPlaylist(){
 	$output = '';
 	$query = "SELECT mp3act_playlist.*, mp3act_artists.artist_name,mp3act_artists.prefix, mp3act_songs.name,mp3act_albums.album_name,mp3act_songs.track,SEC_TO_TIME(mp3act_songs.length) AS time FROM mp3act_playlist,mp3act_artists,mp3act_songs,mp3act_albums WHERE mp3act_playlist.song_id=mp3act_songs.song_id AND mp3act_artists.artist_id=mp3act_songs.artist_id AND mp3act_songs.album_id=mp3act_albums.album_id AND " . (($_SESSION['sess_playmode'] == "streaming") ? ("mp3act_playlist.user_id=" . $_SESSION['sess_userid'] . " AND private=1") : ("private=0")) . " ORDER BY mp3act_playlist.pl_id";
 	
-	$result=mysql_query($query);
+	$result=mysqli_query($query);
 	
-	while($row = mysql_fetch_array($result)){
+	while($row = mysqli_fetch_array($result)){
 			$output .= "<li id=\"pl$row[pl_id]\" onmouseover=\"setBgcolor('pl".$row['pl_id']."','#FCF7A5'); return false;\" onmouseout=\"setBgcolor('pl".$row['pl_id']."','#f3f3f3'); return false;\"><a href=\"#\" onclick=\"movePLItem('up',this.parentNode); return false;\" title=\"Move Song Up in Playlist\"><img src=\"img/up.gif\" /></a> <a href=\"#\" onclick=\"movePLItem('down',this.parentNode); return false;\" title=\"Move Song Down in Playlist\"><img src=\"img/down.gif\" /></a> <a href=\"#\" onclick=\"plrem(this.parentNode.id); return false;\" title=\"Remove Song from Playlist\"><img src=\"img/rem.gif\" /></a> $row[prefix] $row[artist_name] - $row[name]<p>Album: $row[album_name]<br/>Track: $row[track]<br/>$row[time]</p></li>";
 		}
 	if (isset($output)) {
@@ -1061,14 +1061,14 @@ function savePlaylist($pl_name, $prvt){
 	$songs = array();
 	$time=0;
 	$query = "SELECT mp3act_playlist.song_id,mp3act_songs.length FROM mp3act_playlist,mp3act_songs WHERE mp3act_songs.song_id=mp3act_playlist.song_id AND " . (($_SESSION['sess_playmode'] == "streaming") ? ("mp3act_playlist.user_id=" . $_SESSION['sess_userid'] . " AND private=1") : ("private=0")) . " ORDER BY mp3act_playlist.pl_id";
-	$result = mysql_query($query);
-	while($row = mysql_fetch_array($result)){
+	$result = mysqli_query($query);
+	while($row = mysqli_fetch_array($result)){
 		$songs[] = $row['song_id'];
 		$time += $row['length'];
 	}
 	$songslist = implode(",",$songs);
 	$query = "INSERT INTO mp3act_saved_playlists VALUES (NULL,$_SESSION[sess_userid],$prvt,\"$pl_name\",\"$songslist\",NOW(),$time,".count($songs).")";
-	mysql_query($query);
+	mysqli_query($query);
 	return "<h2>Playlist Saved as '".$pl_name."'</h2>";
 }
 
@@ -1081,21 +1081,21 @@ function clearPlaylist(){
 	else{
 		$query .= " WHERE private=0";
 	}
-	mysql_query($query);
+	mysqli_query($query);
 	return "Playlist is empty";
 }
 function deletePlaylist($id){
 	mp3act_connect();
 	$query = "DELETE FROM mp3act_saved_playlists WHERE playlist_id=$id";
-	mysql_query($query);
+	mysqli_query($query);
 	return 1;
 }
 
 function playlistInfo(){
 	mp3act_connect();
 	$query = "SELECT COUNT(mp3act_playlist.pl_id) as count, SEC_TO_TIME(SUM(mp3act_songs.length)) as time FROM mp3act_playlist,mp3act_songs WHERE mp3act_playlist.song_id=mp3act_songs.song_id AND " . (($_SESSION['sess_playmode'] == "streaming") ? ("mp3act_playlist.user_id=" . $_SESSION['sess_userid'] . " AND private=1") : ("private=0"));
-	$result = mysql_query($query);
-	$row = mysql_fetch_array($result);
+	$result = mysqli_query($query);
+	$row = mysqli_fetch_array($result);
 	if($row['count'] == 0){
 		return "Playlist is empty";
 	}
@@ -1106,7 +1106,7 @@ function playlist_rem($itemid){
 	mp3act_connect();
 	$id = substr($itemid, 2);
 	$query = "DELETE FROM mp3act_playlist WHERE pl_id=$id";
-	mysql_query($query);
+	mysqli_query($query);
 	return $itemid;
 }
 
@@ -1116,15 +1116,15 @@ function playlist_move($item1,$item2){
 	$item2 = substr($item2, 2);
 	$row = array();
 	$query = "SELECT pl_id,song_id FROM mp3act_playlist WHERE pl_id=$item1 OR pl_id=$item2";
-	$result = mysql_query($query);
-	while($row[] = mysql_fetch_array($result)){
+	$result = mysqli_query($query);
+	while($row[] = mysqli_fetch_array($result)){
 		
 	}
 	$query = "UPDATE mp3act_playlist SET song_id=" . $row[0]['song_id'] . " WHERE pl_id=" . $row[1]['pl_id'];
-		mysql_query($query);
+		mysqli_query($query);
 		$query = "UPDATE mp3act_playlist SET song_id=" . $row[1]['song_id'] . " WHERE pl_id=" . $row[0]['pl_id'];
 
-	mysql_query($query);
+	mysqli_query($query);
 }
 
 function playlist_add($type,$itemid){
@@ -1134,11 +1134,11 @@ function playlist_add($type,$itemid){
 	  
 		$query = "INSERT INTO mp3act_playlist VALUES (NULL,$itemid,$_SESSION[sess_userid],".($_SESSION['sess_playmode'] == "streaming" ? 1 : 0).")";
 		
-		mysql_query($query);
-		$id = mysql_insert_id();
+		mysqli_query($query);
+		$id = mysqli_insert_id();
 		$query = "SELECT mp3act_artists.artist_name, mp3act_artists.prefix,mp3act_albums.album_name,SEC_TO_TIME(mp3act_songs.length) AS length,mp3act_songs.name,mp3act_songs.track FROM mp3act_artists,mp3act_songs,mp3act_albums WHERE mp3act_songs.song_id=$itemid AND mp3act_artists.artist_id=mp3act_songs.artist_id AND mp3act_albums.album_id=mp3act_songs.album_id";
-		$result = mysql_query($query);
-		$row = mysql_fetch_array($result);
+		$result = mysqli_query($query);
+		$row = mysqli_fetch_array($result);
 		
 		$output[] = "<li id=\"pl$id\" onmouseover=\"setBgcolor('pl".$id."','#FCF7A5'); return false;\" onmouseout=\"setBgcolor('pl".$id."','#f3f3f3'); return false;\"><a href=\"#\" onclick=\"movePLItem('up',this.parentNode); return false;\" title=\"Move Song Up in Playlist\"><img src=\"img/up.gif\" /></a> <a href=\"#\" onclick=\"movePLItem('down',this.parentNode); return false;\" title=\"Move Song Down in Playlist\"><img src=\"img/down.gif\" /></a> <a href=\"#\" onclick=\"plrem(this.parentNode.id); return false;\" title=\"Remove Song from Playlist\"><img src=\"img/rem.gif\" /></a> $row[prefix] $row[artist_name] - $row[name]<p>Album: $row[album_name]<br/>Track: $row[track]<br/>$row[length]</p></li>";
 		$output[] = 1;
@@ -1149,11 +1149,11 @@ function playlist_add($type,$itemid){
 		$items='';
 		$output = array();
 		$query = "SELECT mp3act_songs.song_id,mp3act_songs.name,mp3act_artists.artist_name,mp3act_artists.prefix,mp3act_albums.album_name,SEC_TO_TIME(mp3act_songs.length) AS length,mp3act_songs.name,mp3act_songs.track FROM mp3act_songs,mp3act_artists,mp3act_albums WHERE mp3act_songs.album_id=$itemid AND mp3act_songs.artist_id=mp3act_artists.artist_id AND mp3act_albums.album_id=mp3act_songs.album_id ORDER BY track";
-		$result = mysql_query($query);
-		while($row = mysql_fetch_array($result)){
+		$result = mysqli_query($query);
+		while($row = mysqli_fetch_array($result)){
 		  $query = "INSERT INTO mp3act_playlist VALUES(NULL," . $row['song_id'] . "," . $_SESSION['sess_userid'] . "," . ($_SESSION['sess_playmode'] == "streaming" ? 1 : 0) . ")";
-			mysql_query($query);
-			$id = mysql_insert_id();
+			mysqli_query($query);
+			$id = mysqli_insert_id();
 			$output[] = 'pl'.$id;
 			$items .= "<li id=\"pl$id\" onmouseover=\"setBgcolor('pl".$id."','#FCF7A5'); return false;\" onmouseout=\"setBgcolor('pl".$id."','#f3f3f3'); return false;\"><a href=\"#\" onclick=\"movePLItem('up',this.parentNode); return false;\" title=\"Move Song Up in Playlist\"><img src=\"img/up.gif\" /></a> <a href=\"#\" onclick=\"movePLItem('down',this.parentNode); return false;\" title=\"Move Song Down in Playlist\"><img src=\"img/down.gif\" /></a> <a href=\"#\" onclick=\"plrem(this.parentNode.id); return false;\" title=\"Remove Song from Playlist\"><img src=\"img/rem.gif\" /></a> $row[prefix] $row[artist_name] - $row[name]<p>Album: $row[album_name]<br/>Track: $row[track]<br/>$row[length]</p></li>";
 		}
@@ -1167,13 +1167,13 @@ function playlist_add($type,$itemid){
 	case 'playlist':
 		clearPlaylist();
 		$query = "SELECT * FROM mp3act_saved_playlists WHERE playlist_id=$itemid LIMIT 1";
-		$result = mysql_query($query);
-		$row = mysql_fetch_array($result);
+		$result = mysqli_query($query);
+		$row = mysqli_fetch_array($result);
 		$songs = explode(",",$row['playlist_songs']);
 		
 		foreach($songs as $song){
 			$query = "INSERT INTO mp3act_playlist VALUES(NULL,$song,$_SESSION[sess_userid],".($_SESSION['sess_playmode'] == "streaming" ? 1 : 0).")";
-			mysql_query($query);
+			mysqli_query($query);
 		}
 		$output[0] = 1;
 		return $output;
@@ -1224,9 +1224,9 @@ function randPlay($mode,$type,$num=0,$items){
 				$query = "SELECT mp3act_songs.song_id,mp3act_artists.artist_name,mp3act_songs.name,mp3act_songs.length FROM mp3act_songs,mp3act_artists WHERE mp3act_artists.artist_id=mp3act_songs.artist_id ORDER BY rand()+0 LIMIT $num"; 
 			break;
 		}
-		$result = mysql_query($query);
+		$result = mysqli_query($query);
 			
-			while($row = mysql_fetch_array($result)){
+			while($row = mysqli_fetch_array($result)){
 				$tmp .= "#EXTINF:$row[length],$row[artist_name] - $row[name]\n";
 				$tmp .= "$GLOBALS[http_url]$GLOBALS[uri_path]/playstream.php?i=$row[song_id]&u=$_SESSION[sess_usermd5]&b=$_SESSION[sess_bitrate]&s=$_SESSION[sess_stereo]\n";
 			}
@@ -1303,8 +1303,8 @@ function play($mode,$type,$id){
 			$query = "SELECT mp3act_songs.song_id,mp3act_artists.artist_name,mp3act_songs.name,mp3act_artists.prefix,mp3act_songs.length FROM mp3act_songs,mp3act_artists,mp3act_playlist WHERE mp3act_artists.artist_id=mp3act_songs.artist_id AND mp3act_songs.song_id=mp3act_playlist.song_id AND mp3act_playlist.user_id=$_SESSION[sess_userid] AND mp3act_playlist.private=1 ORDER BY mp3act_playlist.pl_id"; 
 		}	
 			
-			$result = mysql_query($query);
-			while($row = mysql_fetch_array($result)){
+			$result = mysqli_query($query);
+			while($row = mysqli_fetch_array($result)){
 				$length = $row['length'];
 				if(getSystemSetting("sample_mode") == 1){
 					$length = floor($row['length']/4);
@@ -1330,16 +1330,16 @@ function play($mode,$type,$id){
 						unlink("/tmp/mp3act");
 					}
 					$query = "UPDATE mp3act_songs SET random=0";
-					mysql_query($query);
+					mysqli_query($query);
 					$query = "DELETE FROM mp3act_currentsong";
-					mysql_query($query);
+					mysqli_query($query);
 				break;
 				case 'prev':
 						// PREV is not working...
 					 /*exec("killall ".getSystemSetting("phpbin")." > /dev/null 2>&1 &");
 					 exec("killall ".getSystemSetting("mp3bin")." > /dev/null 2>&1 &");
 					 $query = "DELETE FROM mp3act_currentsong";
-						mysql_query($query);
+						mysqli_query($query);
 					 exec(getSystemSetting("phpbin")." includes/play.php 3 $id > /dev/null 2>&1 &"); 
 					 */
 				break;
@@ -1400,8 +1400,8 @@ function download($album){
 	AND mp3act_songs.album_id=mp3act_albums.album_id 
 	AND mp3act_songs.artist_id=mp3act_artists.artist_id LIMIT 1";
 	
-	$result = mysql_query($query);
-	$row = mysql_fetch_array($result);
+	$result = mysqli_query($query);
+	$row = mysqli_fetch_array($result);
 	$dir = dirname($row['filename']);
 	
 	$test = new zip_file("/tmp/album_$album.zip");
@@ -1440,8 +1440,8 @@ function download($album){
 function verifyIP($user_md5,$ip){
   mp3act_connect();
   $query = "SELECT user_id FROM mp3act_users WHERE md5=\"$user_md5\" AND last_ip=\"$ip\"";
-  $result = mysql_query($query);
-  if(mysql_num_rows($result) > 0){
+  $result = mysqli_query($query);
+  if(mysqli_num_rows($result) > 0){
   	return true;
   }
   return false;
@@ -1455,19 +1455,19 @@ function updateNumPlays($num,$r=0,$user='',$mode='jukebox'){
 	 $query .= ",random=1";
 	}
 	$query .= " WHERE song_id=$num";
-  mysql_query($query);
+  mysqli_query($query);
   
   if(!empty($user)){
   	if($mode == 'streaming'){
 			$query = "SELECT user_id FROM mp3act_users WHERE md5=\"$user\"";	
-			$result = mysql_query($query);
-			$row = mysql_fetch_array($result);
+			$result = mysqli_query($query);
+			$row = mysqli_fetch_array($result);
 			$user = $row['user_id'];
 			
   	}
   	$query = "INSERT INTO mp3act_playhistory VALUES (NULL,$user,$num,NOW())";
   	insertScrobbler($num,$user,$mode);
-  	mysql_query($query);
+  	mysqli_query($query);
   }
 }
 
@@ -1486,8 +1486,8 @@ function streamPlay($id, $rate=0, $stereo="s",$user='',$ip=''){
   WHERE mp3act_songs.song_id=$id 
   AND mp3act_artists.artist_id=mp3act_songs.artist_id";
   
-  $result=mysql_query($query);
-  $row = mysql_fetch_array($result);
+  $result=mysqli_query($query);
+  $row = mysqli_fetch_array($result);
 	updateNumPlays($id,0,$user,'streaming');
 	clearstatcache(); // flush buffer
   
@@ -1546,7 +1546,7 @@ function art_insert($album_id, $artist, $album){
 		$image = art_query($artist,$album);
 		if($image != ""){
 			$query = "UPDATE mp3act_albums SET album_art=\"$album_id.jpg\" WHERE album_id=$album_id";
-			mysql_query($query);
+			mysqli_query($query);
 
 			$tmpimg = http_get($image);
 			$path = $GLOBALS['abs_path']."/art/";
@@ -1579,7 +1579,7 @@ function art_insert($album_id, $artist, $album){
 		}
 		else{
 			$query = "UPDATE mp3act_albums SET album_art=\"fail\" WHERE album_id=$album_id";
-			mysql_query($query);
+			mysqli_query($query);
 		}
 
 }
@@ -1676,7 +1676,7 @@ function resetDatabase(){
 	$query[] = "TRUNCATE TABLE mp3act_currentsong";
 	
 	foreach($query as $q){
-		mysql_query($q);
+		mysqli_query($q);
 	}
 	
 	$path = $GLOBALS['abs_path']."/art/";
