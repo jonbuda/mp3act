@@ -418,7 +418,7 @@ if(!$error){
   			}
   			echo "<a href=\"$GLOBALS[http_url]$GLOBALS[uri_path]/\">Login to your new mp3act server</a><br/>";
   			$random_password = substr(md5(uniqid(microtime())), 0, 6);
-  			$query = "INSERT INTO `mp3act_users` VALUES (NULL, 'admin', 'Admin', 'User', PASSWORD(\"$random_password\"), 10, NOW(), 1, '', 'streaming', 0, 's', '21232f297a57a5a743894a0e4a801fc3', '', '0000-00-00 00:00:00', 1,'','','',0)";
+  			$query = "INSERT INTO `mp3act_users` VALUES (NULL, 'admin', 'Admin', 'User', SHA1(\"$random_password\"), 10, NOW(), 1, '', 'streaming', 0, 's', '21232f297a57a5a743894a0e4a801fc3', '', '0000-00-00 00:00:00', 1,'','','',0)";
   			mysqli_query($dbh, $query);
   			echo "<br/><strong>Username:</strong> Admin<br/><strong>Password:</strong> $random_password (Please change this password as soon as you login.)<br/><br/>";
 
